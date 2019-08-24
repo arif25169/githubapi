@@ -151,7 +151,7 @@ class App extends Component {
                 </div>
 
                 <div id="layout-content">
-                    <Route exact path="/" component={HomeComponent} />
+                    <Route exact path="/" component={Github} />
                     <Route path="/conditional" component={Conditional}/>
                     <Route path="/github" component={Github}/>
                     <div className="content-section layout-footer clearfix">
