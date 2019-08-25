@@ -10,9 +10,6 @@ import 'font-awesome/css/font-awesome.css';
 import 'primeicons/primeicons.css';
 import 'prismjs/themes/prism-coy.css';
 import './sass/App.css';
-
-import { HomeComponent } from './showcase/home/HomeComponent';
-import { Conditional } from './showcase/dropdown/Conditional';
 import { Github } from './showcase/dropdown/Github';
 
 class AppMenu extends Component {
@@ -45,11 +42,10 @@ class AppMenu extends Component {
                         <a id="menu_messages" onClick={(event) => this.openMenu(event, 8)} className={classNames({ 'active-menuitem': this.state.activeMenu === 1 })}>
                             <img alt="overlay" className="layout-menu-icon-inactive" src="showcase/resources/images/mono/overlay.svg"></img>
                             <img alt="overlay" className="layout-menu-icon-active" src="showcase/resources/images/mono/overlay-active.svg"></img>
-                            <span>Dropdown</span>
+                            <span>Github</span>
                         </a>
                         <div className={classNames({ 'submenuhide': this.state.activeMenu !== 8, 'submenushow': this.state.activeMenu === 8 })}>
                             <div>
-                                <Link to="/conditional">&#9679; Conditional</Link>
                                 <Link to="/github">&#9679; Github</Link>
                             </div>
                         </div>
@@ -152,7 +148,6 @@ class App extends Component {
 
                 <div id="layout-content">
                     <Route exact path="/" component={Github} />
-                    <Route path="/conditional" component={Conditional}/>
                     <Route path="/github" component={Github}/>
                     <div className="content-section layout-footer clearfix">
                         <span>Okkhor-Copyright © 2018 <a href="http://okkhor.org" target="_blank" rel="noopener noreferrer">okkhor.org</a></span>

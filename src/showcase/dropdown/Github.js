@@ -1,22 +1,20 @@
 import React, { Component } from 'react';
-import { TabView, TabPanel } from 'primereact/tabview';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import axios from 'axios';
+import { FileUpload } from "primereact/fileupload";
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
-
+import {Growl} from 'primereact/growl';
 let gitdirUserPath;
-let gitdirUserPathback;
-
 
 export class Github extends Component {
     constructor() {
         super();
         this.state = {
-            gitUserName: 'arif25169',
-            gitUserRepo: 'files',
+            gitUserName: 'ioori',
+            gitUserRepo: 'file',
             gitUserPath: '',
             finalUrl: '',
             mainUrl: '',
@@ -24,9 +22,12 @@ export class Github extends Component {
             urlApi: [],
             branchesList: '',
             branchesValue: 'master',
+            commitMsg: 'arif',
+            uploadfileName: '',
+            uploadfilePath: 'ioori/file',
 
         };
-      //  this.gitApi = this.gitApi.bind(this)
+        this.uploadGithub = this.uploadGithub.bind(this)
         this.gitUrlApi = this.gitUrlApi.bind(this)
         this.gitUrlApi2 = this.gitUrlApi2.bind(this)
         this.gitUrlApi3 = this.gitUrlApi3.bind(this)
@@ -61,8 +62,8 @@ export class Github extends Component {
             }
             finalUrl = "https://api.github.com/repos/" + gitUserName + "/" + gitUserRepo + "/contents/"
             this.setState({ finalUrl: finalUrl });
-            let res = await axios.get(finalUrl +'?ref='+this.state.branchesValue )
-            console.log(finalUrl +'?ref='+this.state.branchesValue)
+            let res = await axios.get(finalUrl + '?ref=' + this.state.branchesValue)
+            console.log(finalUrl + '?ref=' + this.state.branchesValue)
             let { data } = res;
             console.log(data)
             this.setState({ urlApi: data });
@@ -86,7 +87,7 @@ export class Github extends Component {
             }
             finalUrl = "https://api.github.com/repos/" + gitUserName + "/" + gitUserRepo + "/contents/"
             this.setState({ finalUrl: finalUrl });
-            let res = await axios.get(finalUrl )
+            let res = await axios.get(finalUrl)
             let { data } = res;
             console.log(data)
             this.setState({ urlApi: data });
@@ -111,9 +112,9 @@ export class Github extends Component {
             //console.log('ache')
             finalUrl = "https://api.github.com/repos/" + this.state.gitUserName + "/" + this.state.gitUserRepo + "/contents/" + this.state.gitUserPath + '/';
         }
-        // console.log(finalUrl)
+        console.log(finalUrl)
         this.setState({ finalUrl: finalUrl });
-        let res = await axios.get(finalUrl )
+        let res = await axios.get(finalUrl)
         let { data } = res;
         console.log(data)
         this.setState({ urlApi: data });
@@ -144,15 +145,13 @@ export class Github extends Component {
             inputUrl = "https://api.github.com/repos/" + this.state.gitUserName + "/" + this.state.gitUserRepo + "/contents/";
         }
 
-     //   let nestedurl = inputUrl + gitdirUserPath
-        this.setState({ nestedurl: inputUrl + gitdirUserPath });
-        //console.log(gitdirUserPathback)
+        let nestedurl = inputUrl + gitdirUserPath
+
         // console.log('before')
         // console.log(nestedurl)
-        var afterSlashChars = this.state.nestedurl.match(/\/([^\/]+)\/?$/)[1] + '/';
-       let nestedur2l = this.state.nestedurl.slice(0, -afterSlashChars.length)
-       this.setState({ nestedurl: nestedur2l });
-      //  nestedurl = nestedurl.slice(0, -afterSlashChars.length)
+        var afterSlashChars = nestedurl.match(/\/([^\/]+)\/?$/)[1] + '/';
+        let nestedur2l = nestedurl.slice(0, -afterSlashChars.length)
+        //  nestedurl = nestedurl.slice(0, -afterSlashChars.length)
 
         //  console.log('after')
         //  console.log(nestedurl)
@@ -168,23 +167,70 @@ export class Github extends Component {
     downloadBody = (rowData) => {
 
         return <Button icon="pi pi-download" onClick={() => window.open(rowData.download_url, "_blank")} />
-    
-}
+
+    }
     dirBody = (rowData) => {
         if (rowData.type === 'file') {
-            return <Button icon="pi pi-ban"  />
+            return <Button icon="pi pi-ban" />
         } else if (rowData.type !== 'file') {
             gitdirUserPath = rowData.path + '/'
-            gitdirUserPathback = '/' + rowData.name
             return <Button icon="pi pi-folder" label="Open Dir" onClick={this.gitDirUrlApi} />
         }
     }
+    onFileUpload(e) {
+        var reader = new FileReader();
+        let photo = e.files[0];
+        const scope = this;
+        reader.readAsDataURL(photo);
+        reader.onload = function () {
+            let content = reader.result;
+            var keyw = "data:" + photo.type + ";base64,"; //link will be same from the word webapps in URL
+            var urlStr = content.substring(content.indexOf(keyw) + keyw.length);
+            let album = {
+                extention: photo.type,
+                contentPic: urlStr,
+                contentName: photo.name
+            };
+            scope.setState({ proPic: album });
+        };
+    }
 
+    uploadGithub = async () => {
+        console.log('work')
+        let nameWithOwner = this.state.uploadfilePath;
+        let fileName = this.state.proPic.contentName;
+        let fileMessage = this.state.commitMsg
+        let fileContent ;
+        if(this.state.uploadfileName!==''){
+            fileContent = this.state.uploadfileName;
+        } else fileContent = this.state.proPic.contentPic
+        const token = 'cfe6f89de53e39323b6c5618b5cafcd3745d18f5';
+        var apiurl = "https://api.github.com/repos/" + nameWithOwner + "/contents/" + fileName;
+        var filedata = {
+            "message": fileMessage,
+            "content": fileContent
+        };
+        console.log(filedata)
+        try {
+            let res = await axios.put(apiurl, filedata, {
+                headers: { Authorization: "Token " + token }
+            })
+            console.log(res)
+            if (res.status===201){
+                this.growl.show({severity: 'success', summary: 'Success Message', detail: 'Successfully Uploaded'});
+            }
+        } catch (error) {
+            this.growl.show({severity: 'error', summary: 'Error Message', detail: 'Upload failed'});
+            // console.log(error.response.data);
+            // console.log(error.response.status);
+            // console.log(error.response.headers);
+        }
+  
+
+    }
 
 
     render() {
-        // console.log(this.state.users)
-
         let branchesOption = [{ label: 'master', value: 'master' }]
         if (this.state.branchesList && this.state.branchesList.length) {
             branchesOption = this.state.branchesList.map(item => ({
@@ -192,14 +238,14 @@ export class Github extends Component {
                 label: item.name
             }));
         }
-        var header = <div className="p-clearfix" style={{'lineHeight':'1.87em'}}>List of Files <Button icon="pi pi-arrow-left" title="Go Back" onClick={this.goBackApi} style={{'float':'right'}}/></div>;;
+        var header = <div className="p-clearfix" style={{ 'lineHeight': '1.87em' }}>List of Files <Button icon="pi pi-arrow-left" title="Go Back" onClick={this.goBackApi} style={{ 'float': 'right' }} /></div>;;
         let paginatorLeft2 = <Button icon="pi pi-refresh" onClick={this.gitUrlApi} />;
         let paginatorRight = <Button icon="pi pi-arrow-left" title="Go Back" onClick={this.goBackApi} />;
 
         return (
             <div>
-                <TabView>
-                    {/* <TabPanel header="Static">
+<Growl ref={(el) => this.growl = el}></Growl>
+                {/* <TabPanel header="Static">
                         <div className="content-section implementation">
                             <div>
                                 <DataTable value={this.state.users}
@@ -217,49 +263,72 @@ export class Github extends Component {
                             </div>
                         </div>
                     </TabPanel> */}
-                    <TabPanel header="URL">
 
-                        <div className="ui-grid">
-                            <div className="ui-grid">
 
-                                <InputText value={this.state.mainUrl} style={{ width: '70%' }} onChange={(e) => this.setState({ mainUrl: e.target.value })} placeholder="Enter Url " /> &nbsp;
+                <div className="ui-grid">
+                    <div className="ui-grid">
+                        <br />
+                    </div>
+                    <div className="ui-grid">
+
+                        <InputText value={this.state.mainUrl} style={{ width: '70%' }} onChange={(e) => this.setState({ mainUrl: e.target.value })} placeholder="Enter Url " /> &nbsp;
                             </div>
-                            <div className="ui-grid">
-                            </div>
-                            <div className="ui-grid">
-                                <InputText value={this.state.gitUserName} onChange={(e) => this.setState({ gitUserName: e.target.value })} placeholder="User " />
-                                <InputText value={this.state.gitUserRepo} onChange={(e) => this.setState({ gitUserRepo: e.target.value })} placeholder="Repo" />
-                                <InputText value={this.state.gitUserPath} onChange={(e) => this.setState({ gitUserPath: e.target.value })} placeholder="Path" /> 
-                                <Dropdown value={this.state.branchesValue} options={branchesOption} onChange={(e) => { this.setState({ branchesValue: e.value }) }} placeholder="Select a Branch" />&nbsp;
-                                <Button label="URL" onClick={this.gitUrlApi} />&nbsp;
+                    <div className="ui-grid">
+                    </div>
+                    <div className="ui-grid">
+                        <InputText value={this.state.gitUserName} onChange={(e) => this.setState({ gitUserName: e.target.value })} placeholder="User " />
+                        <InputText value={this.state.gitUserRepo} onChange={(e) => this.setState({ gitUserRepo: e.target.value })} placeholder="Repo" />
+                        <InputText value={this.state.gitUserPath} onChange={(e) => this.setState({ gitUserPath: e.target.value })} placeholder="Path" />
+                        <Dropdown value={this.state.branchesValue} options={branchesOption} onChange={(e) => { this.setState({ branchesValue: e.value }) }} placeholder="Select a Branch" />&nbsp;
                                 <Button label="Fetch" onClick={this.gitUrlApi2} />&nbsp;
+                                <Button label="URL" onClick={this.gitUrlApi} />&nbsp;
                                 <Button label="Branch" onClick={this.gitUrlApi3} />
-                            </div>
+                    </div>
+                </div>
+                {this.state.urlApi ?
+                    <div className="content-section implementation">
+                        <div>
+                            <DataTable value={this.state.urlApi}
+                                paginator={true}
+                                paginatorLeft={paginatorLeft2}
+                                paginatorRight={paginatorRight}
+                                rows={20}
+                                header={header}
+                                rowsPerPageOptions={[5, 10, 20]}
+                                responsive={true}
+                            >
+                                <Column field="name" header="File" sortable={true} filter={true} />
+                                <Column field="size" header="Size" sortable={true} filter={true} />
+                                <Column body={this.dirBody} header="Dir/File" sortable={true} />
+                                <Column body={this.downloadBody} header="Download" sortable={true} />
+                            </DataTable>
+
                         </div>
-                        <div className="content-section implementation">
-                            <div>
-                                <DataTable value={this.state.urlApi}
-                                    paginator={true}
-                                    paginatorLeft={paginatorLeft2}
-                                    paginatorRight={paginatorRight}
-                                    rows={20}
-                                    header={header}
-                                    rowsPerPageOptions={[5, 10, 20]}
-                                    responsive={true}
-                                >
-                                    <Column field="name" header="File" sortable={true} filter={true} />
-                                    <Column field="size" header="Size" sortable={true} filter={true} />
-                                    <Column body={this.dirBody} header="Dir/File" sortable={true} />
-                                    <Column body={this.downloadBody} header="Download" sortable={true} />
+                    </div>
+                    : ""}
 
 
-                                </DataTable>
+                <div className="ui-grid">
+                    <FileUpload
+                        chooseLabel="Upload File"
+                        id="photoUpload"
+                        mode="basic"
+                        accept="*/*"
+                        maxFileSize={1000000}
+                        onSelect={this.onFileUpload.bind(this)}
+                        auto={true}
+                    />
+                    {/* <center>{this.state.proPic.contentName}</center> */}
+                    &nbsp;
+                      <InputText value={this.state.commitMsg} onChange={(e) => this.setState({ commitMsg: e.target.value })} placeholder="User " />
+                    &nbsp;
+                      <InputText value={this.state.uploadfilePath} onChange={(e) => this.setState({ uploadfilePath: e.target.value })} placeholder="User " />
+                    &nbsp;
+                      <InputText value={this.state.uploadfileName} onChange={(e) => this.setState({ uploadfileName: e.target.value })} placeholder="File Name " />
+                    &nbsp;
+                      <Button label="Upload" onClick={this.uploadGithub} />
 
-                            </div>
-                        </div>
-                    </TabPanel>
-
-                </TabView>
+                </div>
 
                 {/* https://github.com/google/rejoiner
     var afterSlashChars = id.match(/\/([^\/]+)\/?$/)[1];
